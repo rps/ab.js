@@ -32,7 +32,7 @@ function handleClientLoad() {
 function checkAuth(immediately) {
   console.log('check',immediately);
   gapi.auth.authorize({
-    client_id: clientId, scope: scopes, immediate: immediately}, handleAuthResult);
+    client_id: clientId, scope: scopes, approval_prompt:'auto'}, handleAuthResult);
 }
 
  // Creates the Analytics Service Object or asks user to authorize
