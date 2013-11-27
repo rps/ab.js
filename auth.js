@@ -32,7 +32,7 @@ function handleClientLoad() {
 function checkAuth(immediately) {
   console.log('check',immediately);
   gapi.auth.authorize({
-    client_id: clientId, scope: scopes, approval_prompt:'auto'}, handleAuthResult);
+    client_id: clientId, scope: scopes, immediate: immediately}, handleAuthResult);
 }
 
  // Creates the Analytics Service Object or asks user to authorize
@@ -77,140 +77,103 @@ function handleAuthClick(event) {
   checkAuth(false);
 }
 
-function auth() {
-  var config = {
-    'response_type': 'token',
-    'approval_prompt': 'auto',
-    'client_id': clientId,
-    'scope': scopes
-  };
-  gapi.auth.authorize(config, function(res) {
-    console.log('login complete');
-    console.log(gapi.auth.getToken());
-    console.log(res);
-    validate(res.access_token);
-  });
-}
-
-/**
- * Executes a query to the Management API to retrieve all the users accounts.
- * Once complete, handleAccounts is executed. Note: A user must have gone
- * through the Google APIs authorization routine and the Google Anaytics
- * client library must be loaded before this function is called.
- */
+// Query (list) all accounts
 function makeApiCall() {
   outputToPage('Querying Accounts.');
-  makeMetadataRequest();
-  // gapi.client.analytics.management.accounts.list().execute(handleAccounts);
+  // makeMetadataRequest();
+  gapi.client.analytics.management.accounts.list().execute(responseHandler);
 }
 
-/**
- * Handles the API response for querying the accounts collection. This checks
- * to see if any error occurs as well as checks to make sure the user has
- * accounts. It then retrieve the ID of the first account and then executes
- * queryWebProeprties.
- * @param {Object} The response object with data from the
- *     accounts collection.
- */
-
+// Selects by default the first account. 
+// TODO: add logic for account selection to pass on
+// TODO: convert into common utility function
 function handleAccounts(response) {
   if (!response.code) {
-    if (response && response.items && response.items.length) {
+    if (response.items && response.items.length) {
       var firstAccountId = response.items[0].id;
       queryWebproperties(firstAccountId);
     } else {
-      updatePage('No accounts found for this user.')
+      outputToPage('No accounts found for this user.', true);
     }
   } else {
-    updatePage('There was an error querying accounts: ' + response.message);
+    outputToPage('There was an error querying accounts: ' + response.message, true);
   }
 }
 
-/**
- * Executes a query to the Management API to retrieve all the users
- * webproperties for the provided accountId. Once complete,
- * handleWebproperties is executed.
- * @param {String} The ID of the account from which to retrieve
- *     webproperties.
- */
+// Query all web properties for a given account
 function queryWebproperties(accountId) {
-  updatePage('Querying Webproperties.');
+  outputToPage('Querying Webproperties.', true);
   gapi.client.analytics.management.webproperties.list({
       'accountId': accountId
-  }).execute(handleWebproperties);
+  }).execute(responseHandler);
 }
 
-/**
- * Handles the API response for querying the webproperties collection. This
- * checks to see if any error occurs as well as checks to make sure the user
- * has webproperties. It then retrieve the ID of both the account and the
- * first webproperty, then executes queryProfiles.
- * @param {Object} response The response object with data from the
- *     webproperties collection.
- */
+// Selects by default the first web property. 
+// TODO: add logic for web property selection to pass on
 function handleWebproperties(response) {
   if (!response.code) {
-    if (response && response.items && response.items.length) {
+    if (response.items && response.items.length) {
       var firstAccountId = response.items[0].accountId;
       var firstWebpropertyId = response.items[0].id;
       queryProfiles(firstAccountId, firstWebpropertyId);
     } else {
-      updatePage('No webproperties found for this user.')
+      outputToPage('No web properties found for this user.', true);
     }
   } else {
-    updatePage('There was an error querying webproperties: ' +
-        response.message);
+    outputToPage('There was an error querying web properties: ' + response.message, true);
   }
 }
 
-
-/**
- * Executes a query to the Management API to retrieve all the users
- * profiles for the provided accountId and webPropertyId. Once complete,
- * handleProfiles is executed.
- * @param {String} accountId The ID of the account from which to retrieve
- *     profiles.
- * @param {String} webpropertyId The ID of the webproperty from which to
- *     retrieve profiles.
- */
+// Query all profiles for a given account and web property
+// TODO: combine all functions into a shared utility function
 function queryProfiles(accountId, webpropertyId) {
-  updatePage('Querying Profiles.');
+  outputToPage('Querying Profiles.', true);
   gapi.client.analytics.management.profiles.list({
     'accountId': accountId,
     'webPropertyId': webpropertyId // set as inlineAB?
-  }).execute(handleProfiles);
+  }).execute(responseHandler);
 }
 
-/**
- * Handles the API response for querying the profiles collection. This
- * checks to see if any error occurs as well as checks to make sure the user
- * has profiles. It then retrieve the ID of the first profile and
- * finally executes queryCoreReportingApi.
- * @param {Object} response The response object with data from the
- *     profiles collection.
- */
+// Selects by default the first profile
+// TODO: add logic for profile selection to pass on
 function handleProfiles(response) {
   if (!response.code) {
     if (response && response.items && response.items.length) {
       var firstProfileId = response.items[0].id;
       queryCoreReportingApi(firstProfileId);
     } else {
-      updatePage('No profiles found for this user.')
+      outputToPage('No profiles found for this user.', true);
     }
   } else {
-    updatePage('There was an error querying profiles: ' + response.message);
+    outputToPage('There was an error querying profiles: ' + response.message, true);
   }
 }
 
+function responseHandler(response) {
+  if (!response.code) {
+    var id = response.items[0].id,
+        secondId;
+    if (response && response.items && response.items.length) {
+      if(type === 'account' || 'profile'){
+        type === 'account' ? queryWebproperties(id) : queryCoreReportingApi(id);
+      } else if(type === 'webproperty'){
+        secondId = response.items[0].accountId;
+        queryProfiles(id, secondId);
+      } else {
+        throw 'Handling type not specified';
+      }
+    } else {
+      outputToPage('No '+ type + 's found.', true);
+    }
+  } else {
+    outputToPage('There was an error querying' + type + 's: ' + response.message, true);
+  }
+}
 
-/**
- * Execute a query to the Core Reporting API to retrieve the top 25
- * organic search terms by visits for the profile specified by profileId.
- * Once complete, handleCoreReportingResults is executed.
- * @param {String} profileId The profileId specifying which profile to query.
- */
+// Core querying function
+// TODO: make inputs more flexible
 function queryCoreReportingApi(profileId) {
-  updatePage('Querying Core Reporting API.');
+  outputToPage('Querying Core Reporting API.', true);
   gapi.client.analytics.data.ga.get({
     'ids': 'ga:' + profileId,
     'start-date': lastNDays(14),
@@ -223,16 +186,7 @@ function queryCoreReportingApi(profileId) {
   }).execute(handleCoreReportingResults);
 }
 
-
-
-
-/**
- * Handles the API reponse for querying the Core Reporting API. This first
- * checks if any errors occured and prints the error messages to the screen.
- * If sucessful, the profile name, headers, result table are printed for the
- * user.
- * @param {Object} response The reponse returned from the Core Reporting API.
- */
+// Prints formatted response
 function handleCoreReportingResults(response) {
   if (!response.code) {
     console.log(response);
@@ -263,33 +217,19 @@ function handleCoreReportingResults(response) {
       outputToPage('No results found.');
     }
   } else {
-    updatePage('There was an error querying core reporting API: ' +
-        response.message);
+    outputToPage('There was an error querying core reporting API: ' +
+        response.message, true);
   }
 }
 
-
-/**
- * Utility method to update the output section of the HTML page. Used
- * to output messages to the user. This overwrites any existing content
- * in the output area.
- * @param {String} output The HTML string to output.
- */
-function outputToPage(output) {
-  document.getElementById('output').innerHTML = output;
+// Add date to page
+function outputToPage(output, appendData) {
+  if(appendData){
+    document.getElementById('output').innerHTML += '<br>' + output;
+  } else {
+    document.getElementById('output').innerHTML = output;
+  }
 }
-
-
-/**
- * Utility method to update the output section of the HTML page. Used
- * to output messages to the user. This appends content to any existing
- * content in the output area.
- * @param {String} output The HTML string to output.
- */
-function updatePage(output) {
-  document.getElementById('output').innerHTML += '<br>' + output;
-}
-
 
 /**
  * Utility method to return the lastNdays from today in the format yyyy-MM-dd.
@@ -316,7 +256,7 @@ function lastNDays(n) {
   return [year, month, day].join('-');
 }
 
-
+// Gives generic list of queryable reports
 function makeMetadataRequest() {
   var request = gapi.client.analytics.metadata.columns.list({
       'reportType': 'ga'
@@ -324,12 +264,7 @@ function makeMetadataRequest() {
   request.execute(renderMetadataReport);
 }
 
-
-/**
- * 2. Print out the Columns data
- * The components of the result can be printed out as follows:
- */
-
+// Render and print data
 function renderMetadataReport(results) {
   console.log(results);
   var reportHtml = [];
@@ -342,7 +277,7 @@ function renderMetadataReport(results) {
   document.getElementById('DIV_ID').innerHTML = reportHtml.join('');
 }
 
-
+// Format report info
 function getReportInfo(results) {
   var html = [];
   if (results) {
@@ -354,7 +289,7 @@ function getReportInfo(results) {
   return html.join('');
 }
 
-
+// Format attribute info
 function getAttributes(results) {
   var html = [];
   if (results) {
@@ -369,6 +304,7 @@ function getAttributes(results) {
   return html.join('');
 }
 
+// Format column info
 function  getColumns(results) {
   var html = [];
   if (results) {
@@ -387,15 +323,15 @@ function  getColumns(results) {
   return html.join('');
 }
 
-
+// (Unused) Used following first auth request to avoid confused deputy
 function validate(token) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET','https://www.googleapis.com/oauth2/v1/tokeninfo?access_token='+token, true);
   xhr.onreadystatechange = function(e){
     if(xhr.readyState === 4 && xhr.status === 200){
-      console.log(e);
-      if(e.audience === clientId) console.log('ALMOST THERE!');
-      console.log('success second!');
+      if(e.audience === clientId){
+        console.log(e);
+      }
     } else if(xhr.status === 400){
       console.log('server error');
     } else {
