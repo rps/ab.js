@@ -6,47 +6,36 @@
  * https://code.google.com/p/google-api-javascript-client/wiki/Authentication
  */
 
+// Cloud console
 var clientId = '657336628940-qfgikt5qv8k8ervasdta1orcdjgp6n5m.apps.googleusercontent.com';
+// Will need to change if Write access required
 var scopes = 'https://www.googleapis.com/auth/analytics.readonly';
+// InlineAB API key
 var apiKey = 'AIzaSyBqBRgHijo2L3Ezbwu_DsEVzQRTL5oVpg8';
 
+// InlineAB GA account id
 var iabAccountId = 45967923; // used to generate propertyId
+// InlineAB GA web property id
 var iabWebPropertyId = 'UA-45967923-1'; // used with accountId to generate profileId
+// InlineAB GA profile id
 var iabProfileId = '79395509'; // used for querying
 
 
-/**
- * Callback executed once the Google APIs Javascript client library has loaded.
- * The function name is specified in the onload query parameter of URL to load
- * this library. After 1 millisecond, checkAuth is called.
- */
+// Called after Google script finished loading
 function handleClientLoad() {
   gapi.client.setApiKey(apiKey);
-  window.setTimeout(checkAuth, 1);
+  // Check for auth -- user not prompted for access
+  window.setTimeout(checkAuth(true), 1);
 }
 
-/**
- * Uses the OAuth2.0 clientId to query the Google Accounts service
- * to see if the user has authorized. Once complete, handleAuthResults is
- * called.
- */
-function checkAuth() {
+// Check whether user is authorized
+function checkAuth(immediately) {
+  console.log('check',immediately);
   gapi.auth.authorize({
-    client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+    client_id: clientId, scope: scopes, immediate: immediately}, handleAuthResult);
 }
 
-/**
- * Handler that is called once the script has checked to see if the user has
- * authorized access to their Google Analytics data. If the user has authorized
- * access, the analytics api library is loaded and the handleAuthorized
- * function is executed. If the user has not authorized access to their data,
- * the handleUnauthorized function is executed.
- * @param {Object} authResult The result object returned form the authorization
- *     service that determine whether the user has currently authorized access
- *     to their data. If it exists, the user has authorized access.
- */
-
- // creates the analytics service object
+ // Creates the Analytics Service Object or asks user to authorize
 function handleAuthResult(token) { // important to set token?
   if (token) {
     gapi.client.load('analytics', 'v3', handleAuthorized);
@@ -55,11 +44,7 @@ function handleAuthResult(token) { // important to set token?
   }
 }
 
-/**
- * Updates the UI once the user has authorized this script to access their
- * data. This changes the visibiilty on some buttons and adds the
- * makeApiCall click handler to the run-demo-button.
- */
+// Set demo button to trigger iabTest
 function handleAuthorized() {
   var authorizeButton = document.getElementById('authorize-button');
   var runDemoButton = document.getElementById('run-demo-button');
@@ -71,16 +56,12 @@ function handleAuthorized() {
   outputToPage('Click the Run Demo button to begin.');
 }
 
+// Query core reporting with hardcoded data
 function iabTest(){
   queryCoreReportingApi(iabProfileId);
 }
 
-/**
- * Updates the UI if a user has not yet authorized this script to access
- * their Google Analytics data. This function changes the visibility of
- * some elements on the screen. It also adds the handleAuthClick
- * click handler to the authorize-button.
- */
+// Ask the user to authorize
 function handleUnauthorized() {
   var authorizeButton = document.getElementById('authorize-button');
   var runDemoButton = document.getElementById('run-demo-button');
@@ -91,16 +72,9 @@ function handleUnauthorized() {
   outputToPage('Please authorize this script to access Google Analytics.');
 }
 
-/**
- * Handler for clicks on the authorization button. This uses the OAuth2.0
- * clientId to query the Google Accounts service to see if the user has
- * authorized. Once complete, handleAuthResults is called.
- * @param {Object} The onclick event.
- */
 function handleAuthClick(event) {
-  gapi.auth.authorize({
-    client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
-  return false;
+  // User prompted to give access
+  checkAuth(false);
 }
 
 function auth() {
