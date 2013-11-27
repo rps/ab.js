@@ -10,6 +10,11 @@ var clientId = '657336628940-qfgikt5qv8k8ervasdta1orcdjgp6n5m.apps.googleusercon
 var scopes = 'https://www.googleapis.com/auth/analytics.readonly';
 var apiKey = 'AIzaSyBqBRgHijo2L3Ezbwu_DsEVzQRTL5oVpg8';
 
+var iabAccountId = 45967923; // used to generate propertyId
+var iabWebPropertyId = 'UA-45967923-1'; // used with accountId to generate profileId
+var iabProfileId = '79395509'; // used for querying
+
+
 /**
  * Callback executed once the Google APIs Javascript client library has loaded.
  * The function name is specified in the onload query parameter of URL to load
@@ -61,8 +66,13 @@ function handleAuthorized() {
 
   authorizeButton.style.visibility = 'hidden';
   runDemoButton.style.visibility = '';
-  runDemoButton.onclick = makeApiCall;
+  // runDemoButton.onclick = makeApiCall;
+  runDemoButton.onclick = iabTest;
   outputToPage('Click the Run Demo button to begin.');
+}
+
+function iabTest(){
+  queryCoreReportingApi(iabProfileId);
 }
 
 /**
@@ -231,8 +241,8 @@ function queryCoreReportingApi(profileId) {
     'ids': 'ga:' + profileId,
     'start-date': lastNDays(14),
     'end-date': lastNDays(0),
-    'metrics': 'ga:visits'
-    // 'dimensions': 
+    'metrics': 'ga:visits',
+    'dimensions': 'ga:eventCategory, ga:eventAction, ga:eventLabel'
     // 'sort': '-ga:visits,ga:source',
     // 'filters': 'ga:medium==organic',
     // 'max-results': 25
