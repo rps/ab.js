@@ -64,7 +64,7 @@ function postTest(){
   var xhr = new XMLHttpRequest();
   xhr.open('post','https://www.googleapis.com/analytics/v3/management/accounts/45967923/webproperties/UA-45967923-1/profiles/79395509/experiments?fields=accountId&key=AIzaSyB1qEJH0RIDBLPW7gK-7fxBmuY1opr_PNU', true);
   xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.setRequestHeader("Authorization", "Bearer "+globalTok);
+  xhr.setRequestHeader("Authorization", "Bearer "+globalTok.access_token);
   var data = {
     "name": "left-box-text",
     "status": "DRAFT",
