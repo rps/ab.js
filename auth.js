@@ -55,8 +55,8 @@ function handleAuthorized() {
 
   authorizeButton.style.visibility = 'hidden';
   runDemoButton.style.visibility = '';
-  // runDemoButton.onclick = makeApiCall;
-  runDemoButton.onclick = postTest;
+  runDemoButton.onclick = listAccounts;
+  // runDemoButton.onclick = postTest;
   outputToPage('Click the Run Demo button to begin.');
 }
 
@@ -112,7 +112,7 @@ function handleAuthClick(event) {
 }
 
 // Query (list) all accounts
-function makeApiCall() {
+function listAccounts() {
   outputToPage('Querying Accounts.');
   // makeMetadataRequest();
   gapi.client.analytics.management.accounts.list().execute(responseHandler);
