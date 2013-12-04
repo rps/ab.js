@@ -7,9 +7,9 @@
  */
 
 // Cloud console
-var clientId = '657336628940-qfgikt5qv8k8ervasdta1orcdjgp6n5m.apps.googleusercontent.com';
+var clientId = '434808078941-p4jaot1bpupfguckj84s9qgf2vo1m9q2.apps.googleusercontent.com';
 // Will need to change if Write access required
-var scopes = 'https://www.googleapis.com/auth/analytics.readonly';
+var scopes = 'https://www.googleapis.com/auth/analytics';
 // InlineAB API key
 var apiKey = 'AIzaSyBqBRgHijo2L3Ezbwu_DsEVzQRTL5oVpg8';
 
@@ -35,9 +35,12 @@ function checkAuth(immediately) {
     client_id: clientId, scope: scopes, immediate: immediately}, handleAuthResult);
 }
 
+var globalTok;
+
  // Creates the Analytics Service Object or asks user to authorize
 function handleAuthResult(token) { // important to set token?
   if (token) {
+    globalTok = token;
     gapi.client.load('analytics', 'v3', handleAuthorized);
   } else {
     handleUnauthorized();
@@ -46,14 +49,40 @@ function handleAuthResult(token) { // important to set token?
 
 // Set demo button to trigger iabTest
 function handleAuthorized() {
+  console.log('token is: ',globalTok);
   var authorizeButton = document.getElementById('authorize-button');
   var runDemoButton = document.getElementById('run-demo-button');
 
   authorizeButton.style.visibility = 'hidden';
   runDemoButton.style.visibility = '';
   // runDemoButton.onclick = makeApiCall;
-  runDemoButton.onclick = iabTest;
+  runDemoButton.onclick = postTest;
   outputToPage('Click the Run Demo button to begin.');
+}
+
+function postTest(){
+  var xhr = new XMLHttpRequest();
+  xhr.open('post','https://www.googleapis.com/analytics/v3/management/accounts/45967923/webproperties/UA-45967923-1/profiles/79395509/experiments?fields=accountId&key=AIzaSyB1qEJH0RIDBLPW7gK-7fxBmuY1opr_PNU', true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.setRequestHeader("Authorization", "Bearer "+globalTok);
+  var data = {
+    "name": "left-box-text",
+    "status": "DRAFT",
+    "variations": [
+  {
+   "name": "\"no javascript!\""
+  },
+  {
+   "name": "\"html only!\""
+  }
+ ]
+}
+  xhr.onreadystatechange = function(){
+    if (xhr.readyState===4 && xhr.status===200){
+      console.log(xhr.responseText);  
+    }
+  }
+  xhr.send(JSON.stringify(data));
 }
 
 // Query core reporting with hardcoded data
