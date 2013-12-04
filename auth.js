@@ -66,14 +66,19 @@ function postTest(){
   xhr.setRequestHeader("Content-Type", "application/json");
   xhr.setRequestHeader("Authorization", "Bearer "+globalTok.access_token);
   var data = {
-    "name": "left-box-text",
-    "status": "DRAFT",
+    "name": "hashtagwinning",
+    "status": "READY_TO_RUN",
+    "objectiveMetric":"ga:bounces",
     "variations": [
   {
-   "name": "\"no javascript!\""
+   "name": "\"no javascript!\"",
+   "url":"http://www.google.com",
+   "status":"ACTIVE"
   },
   {
-   "name": "\"html only!\""
+   "name": "\"html only!\"",
+   "url":"http://www.yahoo.com",
+   "status":"ACTIVE"
   }
  ]
 }
